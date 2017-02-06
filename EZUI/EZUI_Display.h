@@ -112,7 +112,7 @@ class EZUI_Menu : public EZUI_Display{
 		//Actions
 		void display(EZUI *UI);
 		
-		void init(EZUI *UI){refresh = true;};
+		void init(EZUI *UI);
 		void cleanup(EZUI *UI){ /* Do Nothing */};
 		void prevItem(EZUI *UI);
 		void nextItem(EZUI *UI);

@@ -13,6 +13,7 @@ void EZUI_Page::setItems(const PageItem _items[], unsigned int _size){
 	
 	this->items = _items;
 	this->itemCount = _size;
+	this->refresh = true;
 	
 	//Determine the current item as the first selectable item
 	currentItem = -1;
@@ -143,6 +144,11 @@ void EZUI_Page::selectItem(EZUI *UI){
 
 /* MENU ********************************************************************/
 
+void EZUI_Menu::init(EZUI *UI){
+	refresh = true;
+	itemChanged = true;
+}
+
 void EZUI_Menu::display(EZUI *UI){
 	LiquidCrystal_I2C *LCD = UI->LCD;
 	
@@ -151,7 +157,7 @@ void EZUI_Menu::display(EZUI *UI){
 		refresh = false;
 	}
 	
-	if (refresh || itemChanged){
+	if (itemChanged){
 		//Print each menu item (3 items left on line)
 		for(int i=0; i<4; i++){
 			LCD->setCursor(0,i);
@@ -167,6 +173,7 @@ void EZUI_Menu::display(EZUI *UI){
 void EZUI_Menu::setItems(const MenuItem _items[], unsigned int _size){
 	this->items = _items;
 	this->itemCount = _size;
+	this->refresh = true;
 	
 	//Determine the current item as the first selectable item
 	currentItem = -1;
@@ -185,9 +192,10 @@ void EZUI_Menu::prevItem(EZUI *UI){
 	int oldCurrentItem = currentItem;
 	currentItem = max(0,currentItem-1);
 	itemChanged = true;
-	refresh = true;
 	
-	if(cursorLine > 0){
+	if(cursorLine == 0){
+		refresh = true;
+	}else if(cursorLine > 0){
 		cursorLine--;
 	}
 	
@@ -201,11 +209,15 @@ void EZUI_Menu::nextItem(EZUI *UI){
 	int oldCurrentItem = currentItem;
 	currentItem = min(itemCount-1,currentItem+1);
 	itemChanged = true;
-	refresh = true;
+	
+	if(cursorLine == 3){
+		refresh = true;
+	}
 	
 	if(cursorLine < itemCount-1){
 		cursorLine++;
 	}
+	
 	//Determine if we changed the menu page, if so- reprint it;
 	if(cursorLine > 3){
 		cursorLine = 3;
@@ -248,16 +260,6 @@ void EZUI_Menu::selectItem(EZUI *UI){
 void EZUI_Menu::printPage(EZUI *UI){
 	LiquidCrystal_I2C *LCD = UI->LCD;
 	UI->LCD->clear();
-
-	//Print the Cursor
-	for(int i=0; i<4; i++){
-		LCD->setCursor(0,i);
-		if(i==cursorLine){
-			LCD->print(">");
-		}else{
-			LCD->print(" ");
-		}
-	}
 	
 	#if defined(SERIAL_VERBOSE) && (SERIAL_VERBOSE>2)
 		Serial.print(F("  Menu-currentItem:"));
@@ -280,7 +282,7 @@ void EZUI_Menu::printPage(EZUI *UI){
 		//If cursor is at line3, print the current item last
 		if( itemCount > 3){
 			int ln = 3;
-			for(int i=currentItem; i>max(0,currentItem-4); i--){
+			for(int i=currentItem; i>=max(0,currentItem-3); i--){
 				printItem( UI, ln, i);
 				ln--;
 			}
@@ -295,9 +297,9 @@ void EZUI_Menu::printPage(EZUI *UI){
 		}
 	}else{
 		//Were somewhere in between, so figure out first item to print and go from there
-		int firstItemToPrint = currentItem - cursorLine;
+		int firstItemToPrint = currentItem - cursorLine ;
 		int ln = 0;
-		for( int i = 0; i<min(itemCount, firstItemToPrint+4); i++){
+		for( int i = firstItemToPrint; i<min(itemCount, firstItemToPrint+4); i++){
 			printItem( UI, ln, i);
 			ln++;
 		}
@@ -408,7 +410,7 @@ void EZUI_ListOptionEditor::drawListItems(EZUI *UI){
 
 void EZUI_ListOptionEditor::init(EZUI *UI){
 	UI->LCD->clear();
-	
+	this->refresh = true;
 	temp_index = ListOptRef->currentItem();
 	
 	
@@ -556,6 +558,7 @@ void EZUI_AdjustParamEditor::init(EZUI *UI){
 	#endif
 			
 	UI->LCD->clear();
+	this->refresh = true;
 	
 	//Print Min Value Text
 	UI->LCD->setCursor(10,0);
